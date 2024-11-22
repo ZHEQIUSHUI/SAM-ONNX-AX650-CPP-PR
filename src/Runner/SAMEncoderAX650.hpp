@@ -1,6 +1,6 @@
 #pragma once
 #include "string"
-#include "ax_model_runner_ax650.hpp"
+#include "ax_model_runner_axcl.hpp"
 #include "opencv2/opencv.hpp"
 
 #include "SAMEncoder.hpp"
@@ -13,7 +13,7 @@ private:
 public:
     int Load(std::string model_file) override
     {
-        model.reset(new ax_runner_ax650);
+        model.reset(new ax_runner_axcl);
         model->init(model_file.c_str());
         auto &output = model->get_output(0);
 

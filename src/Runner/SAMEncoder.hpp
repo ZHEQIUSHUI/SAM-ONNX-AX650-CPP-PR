@@ -1,6 +1,5 @@
 #pragma once
 #include "string"
-#include "ax_model_runner_ax650.hpp"
 #include "opencv2/opencv.hpp"
 
 class SAMEncoder

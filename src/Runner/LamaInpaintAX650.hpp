@@ -1,7 +1,7 @@
 #pragma once
 #include "opencv2/opencv.hpp"
 #include "LamaInpaint.hpp"
-#include "ax_model_runner_ax650.hpp"
+#include "ax_model_runner_axcl.hpp"
 
 class LamaInpaintAX650 : public LamaInpaint
 {
@@ -11,7 +11,7 @@ private:
 public:
     int Load(std::string model_file) override
     {
-        model.reset(new ax_runner_ax650);
+        model.reset(new ax_runner_axcl);
         model->init(model_file.c_str());
         auto output = model->get_input(0);
         width = output.vShape[2];

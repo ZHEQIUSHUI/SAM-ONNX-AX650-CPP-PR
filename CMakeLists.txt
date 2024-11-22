@@ -11,11 +11,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # bsp
-if(NOT BSP_MSP_DIR)
-    set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/axpi_pro_bsp_sdk/msp/out)
+if(NOT AXCL_DIR)
+    set(AXCL_DIR ${CMAKE_SOURCE_DIR}/axcl)
 endif()
-
-message(STATUS "BSP_MSP_DIR = ${BSP_MSP_DIR}")
+include_directories(${AXCL_DIR}/include)
+link_directories(${AXCL_DIR}/lib)
 
 # set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/toolchains/aarch64-none-linux-gnu.toolchain.cmake)
 cmake_minimum_required(VERSION 3.0)
@@ -47,20 +47,10 @@ message(STATUS "OPENCV_DIR Path: ${OpenCV_DIR}")
 find_package(OpenCV REQUIRED)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(${BSP_MSP_DIR}/include)
-link_directories(${BSP_MSP_DIR}/lib)
-
-option(BUILD_WITH_AX650 "build with ax650" OFF)
-
-if(BUILD_WITH_AX650)
-    add_compile_definitions(BUILD_WITH_AX650)
-endif()
-
-message(STATUS "BUILD_WITH_AX650 : ${BUILD_WITH_AX650}")
 
 add_library(sam STATIC
     src/Runner/BaseRunner.cpp
-    src/Runner/ax_model_runner_ax650.cpp
+    src/Runner/ax_model_runner_axcl.cpp
 )
 
 add_executable(main src/main.cpp)
@@ -70,12 +60,9 @@ target_link_libraries(main sam)
 target_link_libraries(main ${OpenCV_LIBS})
 target_link_libraries(main gomp ${ONNXRUNTIME_LIB})
 
-if(BUILD_WITH_AX650)
-    target_link_libraries(main ax_engine ax_interpreter ax_sys ax_ivps)
-endif()
+target_link_libraries(main spdlog axcl_pcie_dma axcl_pcie_msg axcl_token axcl_comm axcl_pkg axcl_rt)
 
 install(TARGETS main DESTINATION bin)
-
 
 add_executable(main_inpaint src/main_inpaint.cpp)
 
@@ -84,8 +71,6 @@ target_link_libraries(main_inpaint sam)
 target_link_libraries(main_inpaint ${OpenCV_LIBS})
 target_link_libraries(main_inpaint gomp ${ONNXRUNTIME_LIB})
 
-if(BUILD_WITH_AX650)
-    target_link_libraries(main_inpaint ax_engine ax_interpreter ax_sys ax_ivps)
-endif()
+target_link_libraries(main_inpaint spdlog axcl_pcie_dma axcl_pcie_msg axcl_token axcl_comm axcl_pkg axcl_rt)
 
 install(TARGETS main_inpaint DESTINATION bin)
