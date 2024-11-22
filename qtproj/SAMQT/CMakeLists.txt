@@ -66,7 +66,7 @@ target_link_libraries(SAMQT PRIVATE sam)
 target_link_libraries(SAMQT PRIVATE ${OpenCV_LIBS})
 target_link_libraries(SAMQT PRIVATE gomp onnxruntime)
 
-if(BUILD_WITH_AX650)
-    target_link_directories(SAMQT PRIVATE ${BSP_MSP_DIR}/lib)
-    target_link_libraries(SAMQT PRIVATE ax_engine ax_interpreter ax_sys ax_ivps)
-endif()
+
+target_link_directories(SAMQT PRIVATE ${AXCL_DIR}/lib)
+target_link_libraries(SAMQT PRIVATE spdlog axcl_pcie_dma axcl_pcie_msg axcl_token axcl_comm axcl_pkg axcl_rt)
+
