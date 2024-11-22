@@ -1,4 +1,5 @@
 #include <opencv2/opencv.hpp>
+#include <axcl.h>
 #include "cmdline.hpp"
 #include "Runner/SAM.hpp"
 
@@ -18,6 +19,32 @@ int main(int argc, char *argv[])
     image_path = cmd.get<std::string>("image");
     encoder_model_path = cmd.get<std::string>("encoder");
     decoder_model_path = cmd.get<std::string>("decoder");
+
+    // init axcl
+    {
+        if (auto ret = axclInit(0); 0 != ret)
+        {
+            fprintf(stderr, "Init AXCL failed{0x%8x}.\n", ret);
+            return -1;
+        }
+        axclrtDeviceList lst;
+        if (const auto ret = axclrtGetDeviceList(&lst); 0 != ret || 0 == lst.num)
+        {
+            fprintf(stderr, "Get AXCL device failed{0x%8x}, find total %d device.\n", ret, lst.num);
+            return -1;
+        }
+        if (const auto ret = axclrtSetDevice(lst.devices[0]); 0 != ret)
+        {
+            fprintf(stderr, "Set AXCL device failed{0x%8x}.\n", ret);
+            return -1;
+        }
+        int ret = axclrtEngineInit(AXCL_VNPU_DISABLE);
+        if (0 != ret)
+        {
+            fprintf(stderr, "axclrtEngineInit %d\n", ret);
+            return ret;
+        }
+    }
 
     cv::Mat src = cv::imread(image_path);
     SAM sam;
@@ -46,6 +73,7 @@ int main(int argc, char *argv[])
         cv::rectangle(outputs[i].mask, boxinfo, cv::Scalar(0, 0, 255), 4);
         cv::imwrite("rect_result_" + std::to_string(i) + ".jpg", outputs[i].mask);
     }
-
+    
+    axclFinalize();
     return EXIT_SUCCESS;
 }

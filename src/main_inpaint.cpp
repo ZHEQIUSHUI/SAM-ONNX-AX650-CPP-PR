@@ -1,4 +1,5 @@
 #include <opencv2/opencv.hpp>
+#include <axcl.h>
 #include "cmdline.hpp"
 #include "Runner/LamaInpaintAX650.hpp"
 #include "Runner/LamaInpaintOnnx.hpp"
@@ -27,6 +28,32 @@ int main(int argc, char *argv[])
     printf("image %dx%d\n", src.cols, src.rows);
     printf("mask %dx%d\n", mask.cols, mask.rows);
 
+    // init axcl
+    {
+        if (auto ret = axclInit(0); 0 != ret)
+        {
+            fprintf(stderr, "Init AXCL failed{0x%8x}.\n", ret);
+            return -1;
+        }
+        axclrtDeviceList lst;
+        if (const auto ret = axclrtGetDeviceList(&lst); 0 != ret || 0 == lst.num)
+        {
+            fprintf(stderr, "Get AXCL device failed{0x%8x}, find total %d device.\n", ret, lst.num);
+            return -1;
+        }
+        if (const auto ret = axclrtSetDevice(lst.devices[0]); 0 != ret)
+        {
+            fprintf(stderr, "Set AXCL device failed{0x%8x}.\n", ret);
+            return -1;
+        }
+        int ret = axclrtEngineInit(AXCL_VNPU_DISABLE);
+        if (0 != ret)
+        {
+            fprintf(stderr, "axclrtEngineInit %d\n", ret);
+            return ret;
+        }
+    }
+
     std::shared_ptr<LamaInpaint> mInpaint;
     if (string_utility<std::string>::ends_with(model_path, ".onnx"))
     {
@@ -51,5 +78,6 @@ int main(int argc, char *argv[])
     cv::imwrite("inpainted.png", inpainted);
     cv::imwrite("mask.png", mask);
 
+    axclFinalize();
     return EXIT_SUCCESS;
 }

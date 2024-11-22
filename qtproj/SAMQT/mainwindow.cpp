@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-
+#include <axcl.h>
 #include "QImage"
 #include "QFileDialog"
 #include "QMimeData"
@@ -11,6 +11,32 @@ MainWindow::MainWindow(std::string encoder_model_path, std::string decoder_model
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    // init axcl
+    {
+        if (auto ret = axclInit(0); 0 != ret)
+        {
+            fprintf(stderr, "Init AXCL failed{0x%8x}.\n", ret);
+            return;
+        }
+        axclrtDeviceList lst;
+        if (const auto ret = axclrtGetDeviceList(&lst); 0 != ret || 0 == lst.num)
+        {
+            fprintf(stderr, "Get AXCL device failed{0x%8x}, find total %d device.\n", ret, lst.num);
+            return;
+        }
+        if (const auto ret = axclrtSetDevice(lst.devices[0]); 0 != ret)
+        {
+            fprintf(stderr, "Set AXCL device failed{0x%8x}.\n", ret);
+            return;
+        }
+        int ret = axclrtEngineInit(AXCL_VNPU_DISABLE);
+        if (0 != ret)
+        {
+            fprintf(stderr, "axclrtEngineInit %d\n", ret);
+            return;
+        }
+    }
+
     this->ui->label->InitModel(encoder_model_path, decoder_model_path, inpaint_model_path);
     this->setAcceptDrops(true);
     this->ui->txt_dilate->setValidator(new QIntValidator(this->ui->txt_dilate));
@@ -20,6 +46,7 @@ MainWindow::MainWindow(std::string encoder_model_path, std::string decoder_model
 MainWindow::~MainWindow()
 {
     delete ui;
+    axclFinalize();
 }
 
 void MainWindow::on_btn_read_image_clicked()
